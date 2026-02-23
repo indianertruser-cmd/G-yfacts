@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Abstinens-Knuseren</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .fade-in {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        #flashcard {
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+            transition: transform 0.1s ease;
+        }
+        #flashcard:active {
+            transform: scale(0.96);
+        }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen flex flex-col items-center justify-center p-4 font-sans text-center select-none">
+
+    <div class="mb-8 max-w-md w-full">
+        <h1 class="text-3xl font-bold text-slate-800 mb-2">Abstinens-Knuseren</h1>
+        <p class="text-slate-500">Suget forsvinner om noen minutter. Trykk på kortet!</p>
+    </div>
+
+    <!-- Hovedkortet -->
+    <div id="flashcard" class="w-full max-w-md h-80 sm:h-96 relative rounded-3xl shadow-xl border border-slate-200 flex flex-col items-center justify-center p-6 sm:p-8 overflow-hidden bg-gradient-to-br from-indigo-500 to-purple-600 text-white" onclick="showNextFact()">
+        
+        <div id="start-screen" class="w-full h-full flex items-center justify-center">
+            <span class="text-5xl sm:text-6xl font-black tracking-widest uppercase shadow-sm">Fakta</span>
+        </div>
+
+        <div id="fact-screen" class="hidden w-full h-full flex flex-col items-center justify-center">
+            <span id="fact-category" class="text-xs sm:text-sm font-bold text-indigo-500 uppercase tracking-widest mb-6"></span>
+            <p id="fact-text" class="text-xl sm:text-2xl font-medium text-slate-700 leading-relaxed w-full"></p>
+        </div>
+        
+    </div>
+
+    <div class="mt-8 text-sm text-slate-400 font-medium">
+        Kort vist: <span id="counter" class="text-indigo-500 font-bold">0</span> / <span id="total-count">0</span>
+    </div>
+
+    <script>
+        // Her er HELE databasen, uten noen forkortelser!
+        const allFacts = [
+            { cat: "Historie", text: "Oxford-universitetet er eldre enn Aztekerriket." },
+            { cat: "Historie", text: "Kleopatra levde nærmere månelandingen i tid enn byggingen av den store pyramiden i Giza." },
+            { cat: "Historie", text: "Frankrike brukte fortsatt giljotinen til henrettelser da den første Star Wars-filmen hadde premiere i 1977." },
+            { cat: "Geografi", text: "Saudi-Arabia importerer kameler og sand fra Australia." },
+            { cat: "Historie", text: "Nintendo ble grunnlagt i 1889. De startet med å produsere håndmalte spillekort." },
+            { cat: "Geografi", text: "Vatikanstaten er verdens minste land, men drikker mest vin per innbygger i verden." },
+            { cat: "Geografi", text: "Det finnes en by i Norge som heter Hell, og den fryser over nesten hver vinter." },
+            { cat: "Historie", text: "Eiffeltårnet var egentlig ment for Barcelona, men spanjolene mente det var for stygt." },
+            { cat: "Verdensrommet", text: "Russland har et større overflateareal enn dvergplaneten Pluto." },
+            { cat: "Geografi", text: "Maine er den eneste amerikanske delstaten som kun grenser til nøyaktig én annen delstat." },
+            { cat: "Verdensrommet", text: "Det regner diamanter på Jupiter og Saturn på grunn av ekstremt trykk og lyn." },
+            { cat: "Verdensrommet", text: "Venus roterer 'baklengs' i forhold til de andre planetene (solen står opp i vest)." },
+            { cat: "Verdensrommet", text: "Et døgn på Venus er lengre enn et år på Venus." },
+            { cat: "Fysikk", text: "Hvis du kunne brettet et vanlig papir i to 42 ganger, ville tykkelsen nådd helt til månen." },
+            { cat: "Fysikk", text: "En teskje med stoff fra en nøytronstjerne veier omtrent seks milliarder tonn." },
+            { cat: "Verdensrommet", text: "Månen fjerner seg fra jorden med ca. 3,8 cm i året." },
+            { cat: "Geologi", text: "Jordskjelvet i Japan i 2011 var så kraftig at det forkortet jordens døgn med 1,8 mikrosekunder." },
+            { cat: "Verdensrommet", text: "Det er flere stjerner i det observerbare universet enn sandkorn på alle verdens strender." },
+            { cat: "Biologi", text: "Vannbjørner (Tardigrader) kan overleve i verdensrommet, ekstrem stråling og vakuum." },
+            { cat: "Fysikk", text: "Fargen 'magenta' eksisterer egentlig ikke som en bølgelengde. Hjernen din 'finner den opp'." },
+            { cat: "Dyr", text: "Haier eksisterte før trærne. Haier har vært her i over 400 millioner år." },
+            { cat: "Dyr", text: "Vombat-bæsj er terningformet slik at den ikke ruller vekk fra steinene de markerer på." },
+            { cat: "Dyr", text: "Isbjørner har svart hud, og pelsen er gjennomsiktig og hul, ikke hvit." },
+            { cat: "Dyr", text: "Delfiner gir hverandre 'navn' gjennom spesifikke plystrelyder." },
+            { cat: "Dyr", text: "En strutseøye er større enn hjernen dens." },
+            { cat: "Dyr", text: "Kuer har bestevenner, og pulsen øker hvis de skilles fra dem." },
+            { cat: "Dyr", text: "Flodhester svetter en rød, oljete væske som fungerer som solkrem." },
+            { cat: "Dyr", text: "Blekkspruter har tre hjerter og blått blod." },
+            { cat: "Dyr", text: "En loppe kan akselerere raskere enn en romferge." },
+            { cat: "Dyr", text: "Snegler kan sove i tre år i strekk hvis været ikke egner seg." },
+            { cat: "Dyr", text: "Flamingoer er ikke født rosa. De blir det av å spise alger og reker." },
+            { cat: "Dyr", text: "Maur faller aldri ned og dør på grunn av ekstremt lav terminalhastighet." },
+            { cat: "Dyr", text: "Kenguruer kan ikke hoppe baklengs." },
+            { cat: "Dyr", text: "Griser kan fysisk ikke se rett opp i himmelen." },
+            { cat: "Dyr", text: "Honningbier kan lære seg å gjenkjenne menneskeansikter." },
+            { cat: "Dyr", text: "Blåhvalens tunge veier omtrent det samme som en asiatisk elefant." },
+            { cat: "Dyr", text: "Koalaens fingeravtrykk er så like menneskets at de har forvirret åstedsgranskere." },
+            { cat: "Dyr", text: "Et dovendyr bruker to uker på å fordøye ett måltid." },
+            { cat: "Dyr", text: "Hunder kan trenes til å lukte kreft og lavt blodsukker." },
+            { cat: "Dyr", text: "Sommerfugler smaker med føttene for å sjekke om blader er trygge å legge egg på." },
+            { cat: "Mat", text: "Botanisk sett er bananer, agurker og vannmeloner bær. Jordbær er det ikke." },
+            { cat: "Mat", text: "Honning går aldri ut på dato. 3000 år gammel honning fra Egypt er fortsatt spiselig." },
+            { cat: "Mat", text: "Peanøtter er ikke nøtter. De er belgfrukter som vokser under jorden." },
+            { cat: "Mat", text: "Kaffe ble opprinnelig spist. Bærene ble blandet med fett til energikuler." },
+            { cat: "Mat", text: "Epler flyter i vann fordi de består av 25 % luft." },
+            { cat: "Språk", text: "Frukten appelsin kom før fargenavnet i Europa." },
+            { cat: "Språk", text: "Avokado stammer fra Nahuatl-ordet 'āhuacatl', som betyr testikkel." },
+            { cat: "Mat", text: "I Japan finnes det over 200 ulike smaker av KitKat." },
+            { cat: "Historie", text: "Ketsjup ble solgt som medisin mot diaré og dårlig fordøyelse på 1830-tallet." },
+            { cat: "Historie", text: "Verdens eldste bevarte oppskrift er for øl (ca. 4000 år gammel fra Mesopotamia)." },
+            { cat: "Kultur", text: "Charlie Chaplin deltok i en Charlie Chaplin-lookalike-konkurranse... og tapte." },
+            { cat: "Spill", text: "Tetris-sangen er en berømt russisk folkesang fra 1800-tallet." },
+            { cat: "Historie", text: "Pablo Picasso var fortsatt i live da Snoop Dogg ble født (1971)." },
+            { cat: "Geografi", text: "Bokstaven 'Q' er den eneste som ikke dukker opp i navnet på noen amerikansk delstat." },
+            { cat: "Kultur", text: "Verdens lengste musikalske fremføring ('As Slow as Possible') avsluttes i år 2640." },
+            { cat: "Språk", text: "'Astronaut' kommer fra gresk og betyr 'stjernefarer'." },
+            { cat: "Språk", text: "'Alfabet' kommer fra de to første bokstavene i det greske alfabetet: alfa og beta." },
+            { cat: "Kultur", text: "Skottlands offisielle nasjonaldyr er enhjørningen." },
+            { cat: "Geografi", text: "På Filippinene snus nasjonalflagget opp ned når landet er i krig." },
+            { cat: "Anatomi", text: "Det er umulig å nynne mens du holder deg for nesen (prøv!)." },
+            { cat: "Anatomi", text: "Du puster i gjennomsnitt bare gjennom ett nesebor om gangen." },
+            { cat: "Anatomi", text: "Du blinker sjeldnere når du leser og oftere når du snakker." },
+            { cat: "Anatomi", text: "Det finnes ingen muskler i fingrene dine. De styres av sener fra underarmen." },
+            { cat: "Anatomi", text: "Menneskets DNA er 50 % identisk med DNA-et til en banan." },
+            { cat: "Anatomi", text: "Tungen din er den eneste muskelen i kroppen som bare er festet i den ene enden." },
+            { cat: "Anatomi", text: "Magesyren din er sterk nok til å løse opp barberblader i rustfritt stål." },
+            { cat: "Anatomi", text: "Blodårene i en voksen person er lange nok til å nå rundt jorda to og en halv gang." },
+            { cat: "Anatomi", text: "En fjerdedel av alle knoklene i kroppen din befinner seg i føttene." },
+            { cat: "Anatomi", text: "Du produserer nok spytt i løpet av livet til å fylle to svømmebasseng." },
+            { cat: "Dyr", text: "Neseavtrykket til en hund er like unikt som menneskets fingeravtrykk." },
+            { cat: "Historie", text: "Lighteren ble oppfunnet ti år FØR fyrstikken." },
+            { cat: "Vær", text: "En gjennomsnittlig cumulussky veier rundt 500 tonn (som 100 elefanter)." },
+            { cat: "Kjemi", text: "Kvikksølv er det eneste metallet i verden som er flytende ved romtemperatur." },
+            { cat: "Matte", text: "Romertallene har ikke et eget symbol for tallet null." },
+            { cat: "Fysikk", text: "Eiffeltårnet kan bli opptil 15 centimeter høyere om sommeren fordi metallet utvider seg." },
+            { cat: "Historie", text: "Verdens eldste tyggegummi er 9000 år gammel (laget av bjørkekvae)." },
+            { cat: "Jus", text: "I Sveits er det ulovlig å eie bare ett marsvin fordi de er flokkdyr." },
+            { cat: "Natur", text: "Bambus kan vokse opptil 90 centimeter på bare én dag." },
+            { cat: "Oppfinnelser", text: "Motorsagen ble opprinnelig funnet opp som et kirurgisk instrument for barnefødsler." },
+            { cat: "Kjemi", text: "Vann er det eneste stoffet på jorda som finnes naturlig som gass, væske og fast form." },
+            { cat: "Historie", text: "Saksen ble oppfunnet i Midtøsten for over 3000 år siden, lenge før Da Vinci." },
+            { cat: "Internett", text: "I 2006 forsøkte en mann i Australia å selge landet New Zealand på eBay for $3000." },
+            { cat: "Dyr", text: "Frosker kan ikke kaste opp. De må kaste opp hele magesekken, tømme den, og svelge den igjen." },
+            { cat: "Geografi", text: "Hvis du besøkte én strand i Australia hver dag, ville det tatt nesten 30 år å se alle." },
+            { cat: "Dyr", text: "Et eseløye er plassert slik at eselet kan se alle sine fire bein til enhver tid." },
+            { cat: "Teknologi", text: "Romdrakter og kaffekopper fra kiosken bruker samme type isolasjonsprinsipp." },
+            { cat: "Dyr", text: "Klippes værhårene av en katt, mister den mye av evnen til å bedømme avstand." },
+            { cat: "Sport", text: "Gjørma brukt til nye baseballer i USA kommer fra en hemmelig elv i New Jersey." },
+            { cat: "Fysikk", text: "En 'jiffy' er tiden det tar for lyset å reise en centimeter i vakuum." },
+            { cat: "Jus", text: "Det er teknisk sett lov å rømme fra fengsel i Tyskland, da frihetstrang er et instinkt." },
+            { cat: "Dyr", text: "Gresshopper har ørene sine på magen." },
+            { cat: "Matte", text: "Hver gang du stokker en kortstokk godt, er rekkefølgen mest sannsynlig helt unik i verdenshistorien." },
+            { cat: "Dyr", text: "Tigre har stripete hud, ikke bare stripete pels." },
+            { cat: "Dyr", text: "Den udødelige maneten kan reversere aldringsprosessen og bli en polypp (baby) igjen." },
+            { cat: "Geografi", text: "'Zip' i Zip-kode står for 'Zone Improvement Plan'." },
+            { cat: "Geografi", text: "Alaska staves ved hjelp av bokstaver fra kun én rad på et QWERTY-tastatur." },
+            { cat: "Dyr", text: "Sjøhester er de eneste dyrene i verden der hannen blir gravid og føder." },
+            { cat: "Verdensrommet", text: "På Saturns nordpol finnes det en enorm, permanent storm formet som en sekskant." },
+            { cat: "Språk", text: "Ordet 'karaoke' er japansk og betyr 'tomt orkester'." },
+            { cat: "Motivasjon", text: "Du har vært snusfri hele tiden du har vært her inne. Du er rå, fortsett slik!" },
+            { cat: "Dyr", text: "Krokodiller kan ikke stikke ut tungen." },
+            { cat: "Geografi", text: "Canada har flere innsjøer enn resten av verdens land til sammen." },
+            { cat: "Anatomi", text: "Nesen og ørene dine slutter aldri å vokse." },
+            { cat: "Fysikk", text: "Glass er faktisk en væske som flyter ekstremt sakte, ikke et fast stoff." },
+            { cat: "Dyr", text: "Elefanter er de eneste pattedyrene som ikke kan hoppe." },
+            { cat: "Mat", text: "Epler, ferskener og bringebær tilhører rosefamilien." },
+            { cat: "Verdensrommet", text: "Solen utgjør nesten hele massen i solsystemet vårt (99,86 %)." },
+            { cat: "Historie", text: "Den korteste krigen i historien varte i 38 minutter." },
+            { cat: "Dyr", text: "Katter har 32 muskler i hvert øre." },
+            { cat: "Teknologi", text: "Den første datamusen ble funnet opp i 1964 og var laget av tre." },
+            { cat: "Kultur", text: "Nintendo eier rettighetene til Super Mario-pornofilmer, utelukkende for å hindre distribusjon." },
+            { cat: "Geografi", text: "Russland har 11 forskjellige tidssoner." },
+            { cat: "Dyr", text: "En struts kan løpe raskere enn en hest, og hannene kan brøle som løver." },
+            { cat: "Anatomi", text: "Det sterkeste beinet i menneskekroppen er lårbeinet. Det er sterkere enn betong." },
+            { cat: "Historie", text: "Winston Churchill var halvt amerikansk." },
+            { cat: "Spill", text: "Pac-Man het opprinnelig 'Puck-Man', men navnet ble endret for å unngå vandalisme." },
+            { cat: "Natur", text: "Jordbær er den eneste frukten som har frøene sine på utsiden." },
+            { cat: "Verdensrommet", text: "Fotspor på månen vil bli værende i 100 millioner år på grunn av mangel på vind." },
+            { cat: "Dyr", text: "Kameler har tre øyelokk for å beskytte øynene mot flygende sand." },
+            { cat: "Mat", text: "Hvit sjokolade inneholder faktisk ingen faste kakaobestanddeler." },
+            { cat: "Språk", text: "Den vanligste bokstaven på engelsk er 'E'. Den utgjør 11% av alle bokstaver som skrives." },
+            { cat: "Dyr", text: "Tigerens brøl kan høres på over 3 kilometers avstand." },
+            { cat: "Biologi", text: "Du deler bursdag med omtrent 20 millioner andre mennesker i verden." },
+            { cat: "Teknologi", text: "Domeneadressen 'Cars.com' ble solgt for 872 millioner dollar." },
+            { cat: "Dyr", text: "En maursluker spiser opptil 35 000 maur om dagen." },
+            { cat: "Kultur", text: "Oscar-statuettene ble en gang laget av gips under andre verdenskrig på grunn av metallmangel." },
+            { cat: "Geografi", text: "Det er en by i USA som heter 'Ding Dong'." },
+            { cat: "Dyr", text: "Kolibrier er de eneste fuglene som kan fly baklengs." },
+            { cat: "Historie", text: "Vikinger brukte aldri hjelmer med horn. Det er en myte fra 1800-tallet." },
+            { cat: "Fysikk", text: "Lyd beveger seg omtrent fire ganger raskere i vann enn i luft." },
+            { cat: "Mat", text: "Mandel er ikke en nøtt, men frøet til en steinfrukt (i slekt med fersken)." },
+            { cat: "Dyr", text: "Sommerfugler kan ikke fly hvis kroppstemperaturen er under 30 grader." },
+            { cat: "Geografi", text: "Australia er bredere enn månen." },
+            { cat: "Mat", text: "Ketchup ble opprinnelig laget av fermentert fisk, ikke tomater." },
+            { cat: "Dyr", text: "Slanger kan forutsi jordskjelv inntil fem dager før det skjer." },
+            { cat: "Historie", text: "De gamle romerne brukte knust museskrekk og pimpstein som tannkrem." },
+            { cat: "Biologi", text: "Trær kan 'snakke' med hverandre gjennom et underjordisk nettverk av sopp." },
+            { cat: "Verdensrommet", text: "Solen er egentlig hvit, men atmosfæren vår får den til å se gul ut." },
+            { cat: "Sport", text: "Golf er den eneste sporten som har blitt spilt på månen." },
+            { cat: "Dyr", text: "Blekkspruter har ikke bein, det eneste harde er nebbet." },
+            { cat: "Teknologi", text: "Nokia ble grunnlagt i 1865 som en papirfabrikk." },
+            { cat: "Mat", text: "Agurk består av 96 % vann." },
+            { cat: "Dyr", text: "Pingviner kan hoppe over 2 meter opp i luften." },
+            { cat: "Geografi", text: "Damaskus i Syria er verdens eldste kontinuerlig bebodde by." },
+            { cat: "Dyr", text: "Geparden kan ikke brøle, den kan bare mjaue og male som en huskatt." },
+            { cat: "Historie", text: "Det hvite hus ble malt hvitt etter at britene satte fyr på det i 1814 for å skjule brannskader." },
+            { cat: "Mat", text: "Tyggis passerer gjennom kroppen uten å fordøyes." },
+            { cat: "Dyr", text: "Ugler har øye-rør, ikke øyeepler. De må snu hele hodet for å se til siden." },
+            { cat: "Mat", text: "Coca-Cola var opprinnelig grønn." },
+            { cat: "Geografi", text: "Verdens største ørken er Antarktis." },
+            { cat: "Kultur", text: "Den opprinnelige fargen til Julenissen var grønn, ikke rød." },
+            { cat: "Verdensrommet", text: "En dag på Merkur varer i 176 jord-døgn." },
+            { cat: "Dyr", text: "Gorillaer kan bli forkjølet og få andre menneskelige sykdommer." },
+            { cat: "Språk", text: "'Godzilla' er en blanding av de japanske ordene for gorilla og hval." },
+            { cat: "Dyr", text: "En sjiraffs tunge er mørkeblå for å ikke bli solbrent." },
+            { cat: "Mat", text: "Gulerøtter var opprinnelig lilla, ikke oransje." },
+            { cat: "Historie", text: "Mayaindianerne og Aztekerne brukte kakaobønner som valuta." },
+            { cat: "Anatomi", text: "Når du rødmer, rødmer også magesekken din innvendig." },
+            { cat: "Teknologi", text: "Det ble tatt flere bilder i fjor enn i hele fotografiens historie til sammen." },
+            { cat: "Geografi", text: "Island har verken jernbanenettverk eller mygg." },
+            { cat: "Dyr", text: "Kuer gir mer melk hvis de hører på avslappende musikk." },
+            { cat: "Mat", text: "Pommes frites kommer opprinnelig fra Belgia, ikke Frankrike." },
+            { cat: "Historie", text: "Albert Einstein ble tilbudt rollen som Israels president i 1952, men takket nei." },
+            { cat: "Kultur", text: "Monopol ble opprinnelig funnet opp for å vise hvor urettferdig kapitalisme er." },
+            { cat: "Anatomi", text: "Mennesker feller rundt 600 000 hudceller hver time." },
+            { cat: "Verdensrommet", text: "Det tar sollyset drøyt 8 minutter å nå jorden." },
+            { cat: "Spill", text: "Verdensrekorden for å løse en Rubiks kube er under 4 sekunder." },
+            { cat: "Natur", text: "Jordens kjerne er like varm som solens overflate." },
+            { cat: "Anatomi", text: "En fjerdedel av hjernens energiforbruk går kun til å drifte synssansen." },
+            { cat: "Dyr", text: "Hann-pingviner 'frir' ved å gi hunnen den fineste steinen de kan finne." },
+            { cat: "Mat", text: "Muskatnøtt er giftig hvis den spises i store mengder." },
+            { cat: "Dyr", text: "Koalaer sover opptil 22 timer i døgnet." },
+            { cat: "Mat", text: "Ost er den matvaren som stjeles oftest i butikker på verdensbasis." },
+            { cat: "Kultur", text: "Tom og Jerry vant hele 7 Oscar-priser for beste animerte kortfilm." },
+            { cat: "Historie", text: "Byggingen av Kina-muren varte i over 2000 år." },
+            { cat: "Verdensrommet", text: "Svarte hull spyr ut en 'rap' av energi etter å ha spist en stjerne." },
+            { cat: "Fysikk", text: "En lynstråle er fem ganger varmere enn solens overflate." },
+            { cat: "Kultur", text: "Sangen 'Happy Birthday to You' var beskyttet av opphavsrett helt frem til 2015." },
+            { cat: "Dyr", text: "Kameleoner endrer farge for å regulere temperatur, ikke for kamuflasje." },
+            { cat: "Fysikk", text: "Jorden er glattere enn en biljardkule hvis du skalerer den ned." },
+            { cat: "Mat", text: "Spam står for 'Spiced Ham'." },
+            { cat: "Kultur", text: "Walt Disney var redd for mus." },
+            { cat: "Dyr", text: "Grisen er kåret til verdens fjerde mest intelligente dyr." },
+            { cat: "Dyr", text: "Dovendyr kan holde pusten lenger enn delfiner (opptil 40 minutter)." },
+            { cat: "Kjemi", text: "Oksygen i fast form er lyseblått." },
+            { cat: "Biologi", text: "Magesekken din får et nytt lag med slim annenhver uke for ikke å fordøye seg selv." },
+            { cat: "Dyr", text: "En blekkspruts hjerne er smultringformet, og spiserøret går tvers gjennom den." },
+            { cat: "Geologi", text: "Hawaii beveger seg mot Japan med en hastighet på ca. 10 cm i året." },
+            { cat: "Anatomi", text: "Mennesker er de eneste dyrene som beviselig kan rødme." },
+            { cat: "Historie", text: "Det siste landet i verden som avskaffet slaveri var Mauritania i 1981." },
+            { cat: "Kultur", text: "Høye hæler ble opprinnelig designet for mannlige persiske soldater." },
+            { cat: "Mat", text: "Kaffe er verdens nest mest omsatte vare, kun slått av råolje." },
+            { cat: "Dyr", text: "Bevers tenner er oransje fordi de inneholder jern." },
+            { cat: "Verdensrommet", text: "Saturns ringer er enorme, men de er i gjennomsnitt bare 10 meter tykke." },
+            { cat: "Spill", text: "Det finnes flere mulige sjakkpartier enn det finnes atomer i universet." },
+            { cat: "Dyr", text: "Griser kan bli solbrente." },
+            { cat: "Teknologi", text: "Den første e-posten ble sendt i 1971." },
+            { cat: "Dyr", text: "Forskere har oppdaget at rotter 'ler' (ultrasonisk) hvis de blir kilt." },
+            { cat: "Anatomi", text: "Akkurat som fingeravtrykk, har alle mennesker en helt unik kroppslukt (unntatt tvillinger)." },
+            { cat: "Geografi", text: "Kaspiske hav er verken et hav eller en innsjø." },
+            { cat: "Historie", text: "J.F. Kennedy, C.S. Lewis og Aldous Huxley døde alle på nøyaktig samme dag i 1963." },
+            { cat: "Mat", text: "Peanøttsmør kan omdannes til diamanter under ekstremt høyt trykk." },
+            { cat: "Kultur", text: "Bokstaven 'J' var den siste bokstaven som ble lagt til i det engelske alfabetet." },
+            { cat: "Dyr", text: "Sjiraffer har nøyaktig like mange bein i nakken som mennesker (syv)." },
+            { cat: "Verdensrommet", text: "Uranus ruller på siden. Den snurrer ikke som en topp." },
+            { cat: "Biologi", text: "Fiken er teknisk sett ikke frukter, de er omvendte blomster." },
+            { cat: "Historie", text: "Verdens lengste krig varte i 335 år (Nederland mot Scillyøyene). Ingen ble drept." },
+            { cat: "Anatomi", text: "Hjernen din føler ingen smerte, den mangler smertereseptorer." },
+            { cat: "Mat", text: "I 2001 betalte Pizza Hut over 1 million dollar for å levere en pizza til romstasjonen." },
+            { cat: "Dyr", text: "Tigerhaier har tenner som peker sidelengs for å sage gjennom skilpaddeskall." },
+            { cat: "Verdensrommet", text: "Pluto er mindre enn Russland." },
+            { cat: "Dyr", text: "Flamingoer kan bare spise hvis hodet deres er opp ned." },
+            { cat: "Natur", text: "Tordenvær produserer faktisk antimaterie." },
+            { cat: "Anatomi", text: "Hjertet ditt slår omtrent 100 000 ganger på en dag." },
+            { cat: "Kultur", text: "Mickey Mouse var den første animerte figuren med stjerne på Hollywood Walk of Fame." },
+            { cat: "Historie", text: "Tsar Peter den store innførte en 'skjegg-skatt' i Russland." },
+            { cat: "Geografi", text: "90 % av verdens befolkning bor på den nordlige halvkule." },
+            { cat: "Dyr", text: "Et esel kan synke i kvikksand, men det gjør ikke et muldyr." },
+            { cat: "Dyr", text: "Maneter har ikke hjerner." },
+            { cat: "Teknologi", text: "Å skrive ut koden til et menneskes DNA ville krevd 130 store telefonkataloger." },
+            { cat: "Anatomi", text: "Menneskehår er nesten umulig å ødelegge naturlig." },
+            { cat: "Geografi", text: "Canada har den lengste kystlinjen i verden." },
+            { cat: "Mat", text: "Vanilje kommer opprinnelig fra en type orkidé." },
+            { cat: "Dyr", text: "Hunder svetter bare fra potene sine." },
+            { cat: "Motivasjon", text: "Kjenner du at suget nesten er borte nå? Fantastisk jobba!" },
+            { cat: "Verdensrommet", text: "Melkeveien lukter angivelig av rom og smaker bringebær (ifølge støvanalyser)." },
+            { cat: "Dyr", text: "Katter tilbringer 70 % av livet sitt med å sove." },
+            { cat: "Fysikk", text: "Roper du kontinuerlig i over 8 år produserer du nok energi til å varme opp én kaffekopp." },
+            { cat: "Historie", text: "Den britiske kongefamilien har ikke lov til å spille Monopol." },
+            { cat: "Kultur", text: "Den høyeste inntektsbringende filmen om julaften er 'Hjemme alene'." },
+            { cat: "Geografi", text: "Dødehavet synker med omtrent én meter i året." },
+            { cat: "Dyr", text: "Et pinnsvins hjerte slår 300 ganger i minuttet (20 ganger i dvale)." },
+            { cat: "Mat", text: "Cashewnøtter vokser ut av bunnen på en frukt kalt 'cashew-eple'." },
+            { cat: "Anatomi", text: "Det tar kroppen din rundt 12 timer å fordøye ett måltid fullstendig." },
+            { cat: "Natur", text: "Gresshoppesvermer kan dekke områder på størrelse med små land." },
+            { cat: "Verdensrommet", text: "Neil Armstrong måtte gå gjennom tollen da han kom tilbake fra Månen." },
+            { cat: "Spill", text: "I kortspill representerer hjerter konge Karl den store." },
+            { cat: "Teknologi", text: "Nintendo har eid en kjærlighetshotell-kjede i Japan." },
+            { cat: "Dyr", text: "Snegler har anus plassert rett over hodet sitt." },
+            { cat: "Geologi", text: "Diamanter er ikke sjeldne, prisen holdes kunstig høy." },
+            { cat: "Dyr", text: "Nesehornets horn er laget av keratin, det samme som håret ditt." },
+            { cat: "Mat", text: "Ferskener og nektariner er nøyaktig samme art." },
+            { cat: "Språk", text: "Ordet 'muskel' kommer fra latin for 'liten mus'." },
+            { cat: "Dyr", text: "Kamelens pukkel lagrer ikke vann, men fett." },
+            { cat: "Geografi", text: "Grønland er verdens største øy." },
+            { cat: "Anatomi", text: "Høyre lunge er litt større for å gi plass til hjertet." },
+            { cat: "Kultur", text: "Da Vinci kunne skrive med én hånd og tegne med den andre samtidig." },
+            { cat: "Dyr", text: "Svaner har bare én partner livet ut." },
+            { cat: "Fysikk", text: "Vann utvider seg med 9% når det fryser til is." },
+            { cat: "Mat", text: "Tomater ble en gang ansett som giftige og kalt 'ulveferskener'." },
+            { cat: "Motivasjon", text: "Dette fikser du. Pust inn, pust ut. Du er ikke en snuser lenger!" },
+            { cat: "Dyr", text: "Bier kan fly høyere enn Mount Everest." },
+            { cat: "Kjemi", text: "Én unse gull kan strekkes til en tråd på over 80 kilometer." },
+            { cat: "Verdensrommet", text: "En dag på Mars er bare 39 minutter lengre enn på Jorden." },
+            { cat: "Historie", text: "Oppfinneren av Pringles-boksen fikk asken sin begravet i en Pringles-boks." },
+            { cat: "Dyr", text: "Duen er en av få fugler som kjenner igjen seg selv i et speil." },
+            { cat: "Anatomi", text: "Menneskeøyet kan skille mellom 10 millioner farger." },
+            { cat: "Mat", text: "En ananas bruker omtrent to år på å vokse." },
+            { cat: "Natur", text: "Verdens største blomst (Rafflesia) lukter råttent kjøtt." },
+            { cat: "Geografi", text: "Over halvparten av verdens innsjøer er i Canada." },
+            { cat: "Teknologi", text: "Bluetooth ble oppkalt etter vikingkongen Harald Blåtann." },
+            { cat: "Dyr", text: "Geparder kan akselerere fra 0 til 100 km/t på under tre sekunder." },
+            { cat: "Fysikk", text: "Svart tiltrekker seg varme bedre enn noen annen farge." },
+            { cat: "Kultur", text: "Pommes frites kalles 'French fries' på grunn av en språkfeil under 1. verdenskrig." },
+            { cat: "Anatomi", text: "Ørevoks er faktisk en type svette." },
+            { cat: "Verdensrommet", text: "Astronauter kan ikke rape i verdensrommet fordi mat og gass ikke skilles uten gravitasjon." },
+            { cat: "Dyr", text: "Slanger lukter med tungen." },
+            { cat: "Spill", text: "Sjakk ble oppfunnet i India for over 1500 år siden." },
+            { cat: "Historie", text: "Mayaindianerne spilte et ballspill der taperne ble ofret til gudene." },
+            { cat: "Mat", text: "Vannmelon er delstaten Oklahomas offisielle *grønnsak*." },
+            { cat: "Dyr", text: "Sjøløver kan holde rytmen til musikk." },
+            { cat: "Biologi", text: "Det finnes bakterier som spiser plast." },
+            { cat: "Kultur", text: "Barbies fulle navn er Barbara Millicent Roberts." },
+            { cat: "Teknologi", text: "Passordet for USAs kjernefysiske missiler var '00000000' i 20 år." },
+            { cat: "Dyr", text: "Ender sover ofte med det ene øyet åpent." },
+            { cat: "Anatomi", text: "Når du hører lyd, flytter trommehinnen din seg mindre enn et atom." },
+            { cat: "Geologi", text: "Mye av sanden på tropiske strender er faktisk papegøyefisk-bæsj." },
+            { cat: "Geografi", text: "Los Angeles sin fulle og opprinnelige navn er 'El Pueblo de Nuestra Señora la Reina de los Ángeles del Río Porciúncula'." },
+            { cat: "Biologi", text: "Fingeravtrykk dannes i mors liv mens babyen berører innsiden av livmoren." },
+            { cat: "Teknologi", text: "Første gang et menneske brukte en 'smiley' i en e-post var i 1982." },
+            { cat: "Historie", text: "Tidligere president i USA, Abraham Lincoln, er innlemmet i Wrestling Hall of Fame. Han tapte kun 1 av 300 kamper." },
+            { cat: "Motivasjon", text: "Hver dag uten snus reduserer risikoen din for tannkjøttsykdommer drastisk. Bra valg!" }
+        ];
+
+        let availableIndices = [];
+        let isStarted = false;
+        let count = 0;
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        function initDeck() {
+            availableIndices = Array.from({ length: allFacts.length }, (_, i) => i);
+            shuffleArray(availableIndices);
+            count = 0;
+            document.getElementById('counter').innerText = count;
+            document.getElementById('total-count').innerText = allFacts.length; 
+        }
+
+        function showNextFact() {
+            const card = document.getElementById('flashcard');
+            const startScreen = document.getElementById('start-screen');
+            const factScreen = document.getElementById('fact-screen');
+            const categoryEl = document.getElementById('fact-category');
+            const textEl = document.getElementById('fact-text');
+
+            if (!isStarted) {
+                isStarted = true;
+                card.classList.remove('bg-gradient-to-br', 'from-indigo-500', 'to-purple-600', 'text-white');
+                card.classList.add('bg-white');
+                startScreen.classList.add('hidden');
+                factScreen.classList.remove('hidden');
+            }
+
+            if (availableIndices.length === 0) {
+                initDeck();
+                // Istedenfor irriterende popup alert:
+                categoryEl.innerText = "MOTIVASJON";
+                textEl.innerText = "Wow! Du gikk gjennom over 300 kort. Bunken er nå stokket på nytt for deg!";
+                factScreen.classList.remove('fade-in');
+                void factScreen.offsetWidth;
+                factScreen.classList.add('fade-in');
+                return;
+            }
+
+            const factIndex = availableIndices.pop();
+            const fact = allFacts[factIndex];
+
+            factScreen.classList.remove('fade-in');
+            void factScreen.offsetWidth; 
+            factScreen.classList.add('fade-in');
+
+            categoryEl.innerText = fact.cat;
+            textEl.innerText = fact.text;
+            
+            count++;
+            document.getElementById('counter').innerText = count;
+        }
+
+        initDeck();
+
+    </script>
+</body>
+</html>
+
+
